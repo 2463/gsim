@@ -29,7 +29,7 @@ pub fn adjoint_rep(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
 }
 
 // c_n - \sum_i (<c_i,c_n>/<c_i,c_i>)c_i を計算する場所
-fn make_new_base(target: CMatrix2,basis: &Vec<CMatrix2>)->CMatrix2{
+pub(super) fn make_new_base(target: CMatrix2,basis: &Vec<CMatrix2>)->CMatrix2{
     let mut minus: CMatrix2 = DMatrix::zeros(target.ncols(),target.nrows());
 
     for base in basis{
@@ -41,10 +41,16 @@ fn make_new_base(target: CMatrix2,basis: &Vec<CMatrix2>)->CMatrix2{
 
 #[cfg(test)]
 pub mod test_rep{
-    use super::super::dla::test_dla::{check_linear_ind_intest,make_random_hermitian};
+    use super::super::dla::test_dla::make_random_hermitian;
     use num::Complex;
+    use nalgebra::ComplexField;
 
     use super::*;
+
+    pub fn check_linear_ind_intest(matrix_a : &CMatrix2, matrix_b : &CMatrix2)->bool{
+        (matrix_a.dot(matrix_a) * matrix_b.dot(matrix_b) - matrix_a.dot(matrix_b).powi(2)).abs() > 1.0e-7
+    }
+
 
     fn make_minus(target:&CMatrix2,base:&CMatrix2)->CMatrix2{
         let mut minus: CMatrix2 = DMatrix::zeros(target.ncols(),target.nrows());
@@ -178,7 +184,7 @@ pub mod test_rep{
         let ham_b = make_identity(4);
         let clb = ham_b.clone();
         let vector = vec![ham_a,ham_b];
-        let dla = super::super::dla::test_dla::generate_dla_intest(&vector);
+        let dla = super::super::dla::get_dla(&vector);
         if dla.len() > 16{
             assert!(
                 false,
