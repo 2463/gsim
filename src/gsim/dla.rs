@@ -186,7 +186,7 @@ pub mod test_dla{
                 Some(i)=>i,
             });
             while !new.is_empty() {
-                pb_spinner.set_message(format!("current dim(DLA) : {}",old.len()));
+                println!("new.len {}, old.len {}",new.len(),old.len());
                 // test 用コード
                 if old.len() > 16 {return old;}
                 //2. new group と old group の間で全パターン commutator を取り，その結果を comm group とする
@@ -195,8 +195,11 @@ pub mod test_dla{
                 old.append(&mut new);
                 // 4. commutator が 0 でなく，old group と new group に対して独立だったら new groupに加える．これをcomm group すべてに実行
                 for com in coms{
+                    pb_spinner.set_message(format!("current dim(DLA) : {}, candidate num : {}",old.len(),new.len()));
                     pb_spinner.inc(1);
                     if is_zero(&com){continue;}
+                    // ここで他のベクトルでの線形結合で表せるかチェックしないといけないはず．
+                    // TODO: check_linear_ind_systems を直す(今はそれぞれで線形独立かしかチェックしてない)
                     if check_linear_ind_systems(&com, &old) 
                         & check_linear_ind_systems(&com, &new){new.push(com);}
                 }
@@ -214,30 +217,33 @@ pub mod test_dla{
         assert_eq!(dla.len(),1);
     }
 
-    // #[test]
-    // fn generate_dla_test_random(){
-    //     let ham1 = make_random_hermitian(4, 4);
-    //     let clham1 = ham1.clone();
-    //     let ham2 = make_random_hermitian(4, 4);
-    //     let clham2 = ham2.clone();
-    //     let ham3 = make_random_hermitian(4, 4);
-    //     let clham3 = ham3.clone();
-    //     let dla = generate_dla_intest(&vec![ham1,ham2,ham3]);
-    //     if dla.len() > 16 {
-    //         assert!(false,
-    //             "ham1 {} ham2 {} ham3 {}",
-    //             clham1,
-    //             clham2,
-    //             clham3);
-    //     }else if dla.len() < 3 {
-    //         assert!(false,
-    //             "dla.len() {},ham1 {} ham2 {} ham3 {}",
-    //             dla.len(),
-    //             clham1,
-    //             clham2,
-    //             clham3);
-    //     }
-    // }
+    #[test]
+    fn generate_dla_test_random(){
+        let ham1 = make_random_hermitian(2, 2);
+        let clham1 = ham1.clone();
+        let ham2 = make_random_hermitian(2, 2);
+        let clham2 = ham2.clone();
+        let dla = generate_dla_intest(&vec![ham1,ham2]);
+        if dla.len() > 4 {
+            println!("dla_elems");
+            for dla_elem in dla.clone(){
+               println!("{}",cutoff(dla_elem));
+            }
+            let independency_result = check_independency(&dla);
+            println!("independency result {:?}",independency_result);
+            assert!(false,
+                "dla.len() {}\nham1 {} ham2 {}",
+                dla.len(),
+                clham1,
+                clham2);
+        }else if dla.len() < 2 {
+            assert!(false,
+                "dla.len() {},ham1 {} ham2 {}",
+                dla.len(),
+                clham1,
+                clham2);
+        }
+    }
 
     #[test]
     fn generate_dla_test_fixed(){
@@ -282,6 +288,12 @@ pub mod test_dla{
         let cl_b = b.clone();
         let dla = generate_dla_intest(&vec![a,b]);
         if dla.len() > 16 {
+            // println!("dla_elems");
+            // for dla_elem in dla.clone(){
+            //    println!("{}",cutoff(dla_elem));
+            // }
+            let independency_result = check_independency(&dla);
+            println!("independency result {:?}",independency_result);
             assert!(false,
                 "dla.len() {},\nham1 {} ham2 {}",
                 dla.len(),
@@ -299,6 +311,18 @@ pub mod test_dla{
             );
         }
 
+    }
+
+    fn check_independency(vec_matrix:&Vec<CMatrix2>)->Option<(&CMatrix2,&CMatrix2)>{
+        for matrix1 in vec_matrix{
+            for matrix2 in vec_matrix{
+                if matrix1 == matrix2{continue}
+                if !check_linear_ind_intest(matrix1, matrix2){
+                    return Some((matrix1,matrix2));
+                }
+            }
+        }
+        None
     }
 
     // #[test]
