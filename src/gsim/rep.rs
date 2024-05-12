@@ -1,6 +1,7 @@
 use super::dla::commutator;
 use nalgebra::DMatrix;
 use num::complex::Complex64;
+use super::dla;
 
 type CMatrix2 = DMatrix<Complex64>;
 
@@ -36,7 +37,18 @@ pub(super) fn make_new_base(target: CMatrix2,basis: &Vec<CMatrix2>)->CMatrix2{
         let coef = base.dot(&target) / base.dot(&base);
         minus = (base * coef) + minus;
     }
-    target - minus
+    let result = target - minus;
+
+    if dla::is_zero(&result){
+        return result;
+    }
+    
+    normalize(&result)
+}
+
+fn normalize(c:&CMatrix2)->CMatrix2{
+    let normalizer = Complex64::new(1.0 / c.norm(),0.0);
+    c * normalizer
 }
 
 #[cfg(test)]
@@ -52,14 +64,14 @@ pub mod test_rep{
     }
 
 
-    fn make_minus(target:&CMatrix2,base:&CMatrix2)->CMatrix2{
-        let mut minus: CMatrix2 = DMatrix::zeros(target.ncols(),target.nrows());
+    // fn make_minus(target:&CMatrix2,base:&CMatrix2)->CMatrix2{
+    //     let mut minus: CMatrix2 = DMatrix::zeros(target.ncols(),target.nrows());
     
-        let coef = base.dot(&target) / base.dot(&base);
-        minus = (base * coef) + minus;
+    //     let coef = base.dot(&target) / base.dot(&base);
+    //     minus = (base * coef) + minus;
     
-        minus
-    }    
+    //     minus
+    // }    
 
     fn check_hermitian(matrix: &CMatrix2) -> bool {
         let (rows, cols) = (matrix.ncols(),matrix.nrows());
@@ -81,15 +93,115 @@ pub mod test_rep{
 
     #[test]
     fn make_new_base_test(){
-        let ham_a = make_random_hermitian(3, 3);
-        let ham_b = make_random_hermitian(3, 3);
+        let ham_a = make_random_hermitian(2, 2);
+        let ham_b = make_random_hermitian(2, 2);
         let vec_b = vec![ham_b.clone()];
         let newbase = make_new_base(ham_a.clone(), &vec_b);
 
         assert!(check_linear_ind_intest(&vec_b[0], &newbase),"ham_a {:}, \nham_b {:}\nnewbse {:}",ham_a,ham_b, newbase);
     }
 
-    pub fn reshape(target: CMatrix2, row:i16, col:i16)->CMatrix2{
+    #[test]
+    fn make_new_base_test_fixed1(){
+        let avec = vec![
+            Complex::new(-0.5,0.0),
+            Complex::new(-0.9,-0.2),
+            Complex::new(-0.9,0.2),
+            Complex::new(0.7,0.0)];
+            // [-0.5+0j, -0.9-0.2j,-0.9+0.2j, 0.7+0j]
+        let bvec = vec![
+                Complex::new(0.6,0.0),
+                Complex::new(-0.5,-0.3),
+                Complex::new(-0.5,0.3),
+                Complex::new(-0.4,0.0)];
+            // [0.6+0j, -0.5-0.3j,-0.5+0.3j,   -0.4+0j]
+        let a = DMatrix::from_vec(2,2,avec).conjugate();
+        let cla = a.clone();
+        let b = DMatrix::from_vec(2,2,bvec).conjugate();
+        let clb = b.clone();
+        let resultvec = vec![
+            Complex::new(-0.42402543,0.0),
+            Complex::new(-0.51511237,-0.08480509),
+            Complex::new(-0.51511237,0.08480509),
+            Complex::new(0.52453516,0.)];
+            // [-0.42402543+0.j        , -0.51511237-0.08480509j,-0.51511237+0.08480509j,  0.52453516+0.j        ]
+        let result = DMatrix::from_vec(2, 2, resultvec).conjugate();
+        let rust_result = make_new_base(a, &vec![b]);
+        let coeff = clb.dot(&cla) / clb.dot(&clb);
+        println!("coeff {}",coeff);
+        println!("coeff_bottom {}",clb.dot(&clb));
+        println!("coeff_over {}",clb.dot(&cla));
+        println!("dotted matrix {:}",(&clb * coeff));
+        let gs = &cla - (&clb * coeff);
+        println!("gs matrix {:}", gs);
+        println!("normalized gs matrix {:}", normalize(&gs));
+        println!("make_new_base {:}",rust_result);
+        println!("target result {:}",result);
+        println!("is vertical? {}",is_vertial(&gs, &clb));
+        assert!(is_close(&rust_result,&result));
+    }
+
+    #[test]
+    fn make_new_base_test_fixed2(){
+// [-0.424+-0j, -0.515-0.085j, -0.515+0.085j, 0.525+0j]
+// [0.6+-0j, -0.5-0.3j, -0.5+0.3j, -0.4+0j]
+// [0+0.215j, 0.649-0.232j,-0.649-0.232j,0-0.072j]
+// [-0.672+0j, -0.088+0.039j,-0.088-0.039j,-0.728+0j]
+// [0.609+0j, 0.305-0.19j,0.305+0.19j,-0.609+0j]
+        // let target = 
+        let avec = vec![
+            Complex::new(-0.5,0.0),
+            Complex::new(-0.9,-0.2),
+            Complex::new(-0.9,0.2),
+            Complex::new(0.7,0.0)];
+            // [-0.5+0j, -0.9-0.2j,-0.9+0.2j, 0.7+0j]
+        let bvec = vec![
+                Complex::new(0.6,0.0),
+                Complex::new(-0.5,-0.3),
+                Complex::new(-0.5,0.3),
+                Complex::new(-0.4,0.0)];
+            // [0.6+0j, -0.5-0.3j,-0.5+0.3j,   -0.4+0j]
+        let a = DMatrix::from_vec(2,2,avec).conjugate();
+        let cla = a.clone();
+        let b = DMatrix::from_vec(2,2,bvec).conjugate();
+        let clb = b.clone();
+        let resultvec = vec![
+            Complex::new(-0.42402543,0.0),
+            Complex::new(-0.51511237,-0.08480509),
+            Complex::new(-0.51511237,0.08480509),
+            Complex::new(0.52453516,0.)];
+            // [-0.42402543+0.j        , -0.51511237-0.08480509j,-0.51511237+0.08480509j,  0.52453516+0.j        ]
+        let result = DMatrix::from_vec(2, 2, resultvec).conjugate();
+        let rust_result = make_new_base(a, &vec![b]);
+        let coeff = clb.dot(&cla) / clb.dot(&clb);
+        println!("coeff {}",coeff);
+        println!("coeff_bottom {}",clb.dot(&clb));
+        println!("coeff_over {}",clb.dot(&cla));
+        println!("dotted matrix {:}",(&clb * coeff));
+        let gs = &cla - (&clb * coeff);
+        println!("gs matrix {:}", gs);
+        println!("normalized gs matrix {:}", normalize(&gs));
+        println!("make_new_base {:}",rust_result);
+        println!("target result {:}",result);
+        println!("is vertical? {}",is_vertial(&gs, &clb));
+        assert!(is_close(&rust_result,&result));
+    }
+
+    fn normalize(c:&CMatrix2)->CMatrix2{
+        let normalizer = Complex64::new(1.0 / c.norm(),0.0);
+        c * normalizer
+    }
+
+    fn is_vertial(c1:&CMatrix2,c2:&CMatrix2)->bool{
+        let result = c1.dot(&c2);
+        result.abs() < 1.0e-9
+    }
+
+    fn is_close(c1:&CMatrix2,c2:&CMatrix2)->bool{
+        (c1 - c2).norm() < 1.0e-7
+    }
+
+    pub fn reshape(target: &CMatrix2, row:i16, col:i16)->CMatrix2{
         if (target.ncols() * target.nrows()) != (row * col) as usize{
             assert!(false, "input row*col {}, target {}",row*col,target);
         }
@@ -104,70 +216,70 @@ pub mod test_rep{
         DMatrix::from_vec(row as usize, col as usize,reshaped_vec)
     }
 
-    #[test]
-    fn make_new_base_test2(){
-        let avec = vec![
-            Complex::new(0.4,0.0),
-            Complex::new(-0.9,0.4),
-            Complex::new(-0.2,1.0),
-            Complex::new(-0.9,-0.4),
-            Complex::new(-0.6,0.0),
-            Complex::new(0.3,0.2),
-            Complex::new(-0.2,-1.0),
-            Complex::new(0.3,-0.2),
-            Complex::new(0.5,0.0)];
-        let bvec = vec![
-                Complex::new(-0.9,0.0),
-                Complex::new(0.9,0.9),
-                Complex::new(-0.3,1.0),
-                Complex::new(0.9,-0.9),
-                Complex::new(0.5,0.0),
-                Complex::new(0.7,0.3),
-                Complex::new(-0.3,-1.0),
-                Complex::new(0.7,-0.3),
-                Complex::new(0.5,0.0)];
-        let a = DMatrix::from_vec(3,3,avec);
-        let cl_a = a.clone();
-        let re_a = reshape(a.clone(), 9, 1);
-        let b = DMatrix::from_vec(3,3,bvec);
-        let cl_b = b.clone();
-        let re_b = reshape(b.clone(), 9, 1);
-        let resultvec = vec![
-            Complex::new(-13.03793103,0.0),
-            Complex::new(12.53793103,13.83793103),
-            Complex::new(-4.67931034,15.93103448),
-            Complex::new(12.53793103,-13.83793103),
-            Complex::new(6.86551724, 0.0),
-            Complex::new(10.75172414,4.67931034),
-            Complex::new(-4.67931034,-15.93103448),
-            Complex::new(10.75172414,-4.67931034),
-            Complex::new(7.96551724,0.0)];
-        let minus = make_minus(&a, &b);
-        let re_minus = reshape(minus, 9, 1);
+    // #[test]
+    // fn make_new_base_test2(){
+    //     let avec = vec![
+    //         Complex::new(0.4,0.0),
+    //         Complex::new(-0.9,0.4),
+    //         Complex::new(-0.2,1.0),
+    //         Complex::new(-0.9,-0.4),
+    //         Complex::new(-0.6,0.0),
+    //         Complex::new(0.3,0.2),
+    //         Complex::new(-0.2,-1.0),
+    //         Complex::new(0.3,-0.2),
+    //         Complex::new(0.5,0.0)];
+    //     let bvec = vec![
+    //             Complex::new(-0.9,0.0),
+    //             Complex::new(0.9,0.9),
+    //             Complex::new(-0.3,1.0),
+    //             Complex::new(0.9,-0.9),
+    //             Complex::new(0.5,0.0),
+    //             Complex::new(0.7,0.3),
+    //             Complex::new(-0.3,-1.0),
+    //             Complex::new(0.7,-0.3),
+    //             Complex::new(0.5,0.0)];
+    //     let a = DMatrix::from_vec(3,3,avec);
+    //     let cl_a = a.clone();
+    //     let re_a = reshape(a.clone(), 9, 1);
+    //     let b = DMatrix::from_vec(3,3,bvec);
+    //     let cl_b = b.clone();
+    //     let re_b = reshape(b.clone(), 9, 1);
+    //     let resultvec = vec![
+    //         Complex::new(-13.03793103,0.0),
+    //         Complex::new(12.53793103,13.83793103),
+    //         Complex::new(-4.67931034,15.93103448),
+    //         Complex::new(12.53793103,-13.83793103),
+    //         Complex::new(6.86551724, 0.0),
+    //         Complex::new(10.75172414,4.67931034),
+    //         Complex::new(-4.67931034,-15.93103448),
+    //         Complex::new(10.75172414,-4.67931034),
+    //         Complex::new(7.96551724,0.0)];
+    //     let minus = make_minus(&a, &b);
+    //     let re_minus = reshape(minus, 9, 1);
 
-        let result = DMatrix::from_vec(9, 1, resultvec);
-        let calc_result = make_new_base(a, &vec![b]);
-        let reshaped_result = reshape(calc_result, 9, 1);
-        assert!(
-            (result.clone() - reshaped_result.clone()).norm() < 1.0e-5,
-            "result ({},{}) {:}, calc_result ({},{}) {:}, a {:}, b {:}, <a,b> {:}, <b,b> {:}, <a,b>/<b,b> {:},\n <a,b>/<b,b>b {:},a-<a,b>/<b,b>b {:},cl a-<a,b>/<b,b>b {:}, minus {:}, distane {}",
-            result.ncols(),
-            result.nrows(),
-            result,reshaped_result.ncols(),
-            reshaped_result.nrows(),
-            reshaped_result,
-            re_a,
-            re_b,
-            re_a.dot(&re_b),
-            re_b.dot(&re_b),
-            re_b.dot(&re_a)/ re_b.dot(&re_b),
-            re_b.clone() * (re_b.dot(&re_a) / re_b.dot(&re_b)),
-            re_a.clone() - (re_b.clone() * (re_b.dot(&re_a) / re_b.dot(&re_b)) + CMatrix2::zeros(9,1)),
-            reshape(cl_a.clone() - (cl_b.clone() * (cl_b.dot(&cl_a) / cl_b.dot(&cl_b)) + CMatrix2::zeros(3,3)), 9, 1),
-            re_minus,
-            (result.clone() - reshaped_result.clone()));
+    //     let result = DMatrix::from_vec(9, 1, resultvec);
+    //     let calc_result = make_new_base(a, &vec![b]);
+    //     let reshaped_result = reshape(calc_result, 9, 1);
+    //     assert!(
+    //         (result.clone() - reshaped_result.clone()).norm() < 1.0e-5,
+    //         "result ({},{}) {:}, calc_result ({},{}) {:}, a {:}, b {:}, <a,b> {:}, <b,b> {:}, <a,b>/<b,b> {:},\n <a,b>/<b,b>b {:},a-<a,b>/<b,b>b {:},cl a-<a,b>/<b,b>b {:}, minus {:}, distane {}",
+    //         result.ncols(),
+    //         result.nrows(),
+    //         result,reshaped_result.ncols(),
+    //         reshaped_result.nrows(),
+    //         reshaped_result,
+    //         re_a,
+    //         re_b,
+    //         re_a.dot(&re_b),
+    //         re_b.dot(&re_b),
+    //         re_b.dot(&re_a)/ re_b.dot(&re_b),
+    //         re_b.clone() * (re_b.dot(&re_a) / re_b.dot(&re_b)),
+    //         re_a.clone() - (re_b.clone() * (re_b.dot(&re_a) / re_b.dot(&re_b)) + CMatrix2::zeros(9,1)),
+    //         reshape(cl_a.clone() - (cl_b.clone() * (cl_b.dot(&cl_a) / cl_b.dot(&cl_b)) + CMatrix2::zeros(3,3)), 9, 1),
+    //         re_minus,
+    //         (result.clone() - reshaped_result.clone()));
 
-    }
+    // }
 
     fn make_identity(u:usize)->CMatrix2{
         let mut mat = CMatrix2::zeros(u, u);
@@ -197,7 +309,7 @@ pub mod test_rep{
         let len = dla.len()as i16;
         let basis = get_schmit_basis(dla);
         let adjoint_a = adjoint_rep(vector[0].clone(), &basis);
-        println!("😊adjoint_a:\n {:}",reshape(adjoint_a.clone(), len * len , 1));
+        println!("😊adjoint_a:\n {:}",reshape(&adjoint_a, len * len , 1));
         assert!(adjoint_a.iter().all(|&z| z.re <= 1.0e-7));
     }
 
