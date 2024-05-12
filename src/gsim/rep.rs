@@ -51,16 +51,16 @@ pub fn gs_system(target: CMatrix2,system: &Vec<CMatrix2>)->CMatrix2{
         return CMatrix2::zeros(target.nrows(), target.ncols());
     }
     let mut gs = target;
-    println!("gs [input]: {}", generate_cmatrix_string_in_python_form(&gs));
+    // println!("gs [input]: {}", generate_cmatrix_string_in_python_form(&gs));
         for base in system{
         gs = gram_schmidt(gs, base);
         if dla::is_zero(&gs){
-            println!("gs : return zero");
+            // println!("gs : return zero");
             return CMatrix2::zeros(gs.nrows(), gs.ncols());
         }    
-        println!("gs : {}", generate_cmatrix_string_in_python_form(&gs));
+        // println!("gs : {}", generate_cmatrix_string_in_python_form(&gs));
     }
-    println!("gs [return]: {}",generate_cmatrix_string_in_python_form(&normalize(&gs)));
+    // println!("gs [return]: {}",generate_cmatrix_string_in_python_form(&normalize(&gs)));
     normalize(&gs)
 }
 
@@ -84,6 +84,9 @@ fn gram_schmidt(target: CMatrix2,base: &CMatrix2)->CMatrix2{
 }
 
 pub fn normalize(c:&CMatrix2)->CMatrix2{
+    if c.norm() < 1.0e-7 * (c.nrows() * c.ncols() * 2) as f64{
+        return CMatrix2::zeros(c.nrows(), c.ncols());
+    }
     c * Complex64::new(1.0 / c.norm(),0.0)
 }
 

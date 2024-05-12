@@ -302,7 +302,7 @@ pub mod test_dla{
         matrix.map(|x|->Complex<f64>{return round!(x,1000.0)})
     }
 
-    const NUMBER_OF_QUBIT:usize = 2;
+    const NUMBER_OF_QUBIT:usize = 3;
 
     pub fn get_dla_intest(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         // プログレスバー作成
@@ -360,14 +360,14 @@ pub mod test_dla{
                         print_all(&old);
                         println!("########## new #########");
                         print_all(&new);
-                        println!("######### rust_code of old ######");
-                        println!("{}",generate_dla_rust_form(row,col,&old));
-                        println!("######### rust_code of new ######");
-                        println!("{}",generate_dla_rust_form(row,col,&new));
+                        // println!("######### rust_code of old ######");
+                        // println!("{}",generate_dla_rust_form(row,col,&old));
+                        // println!("######### rust_code of new ######");
+                        // println!("{}",generate_dla_rust_form(row,col,&new));
                         println!("########## com #########");
                         print_cmatrix_in_python_form(&clcom);
-                        println!("######### rust code of com #######");
-                        println!("{}",generate_cmatrix_rust_form(&clcom));
+                        // println!("######### rust code of com #######");
+                        // println!("{}",generate_cmatrix_rust_form(&clcom));
                         println!("######### gs_com #########");
                         print_cmatrix_in_python_form(&gs_com);
                         panic!("{}","gs_com is not vertical against old".red());
@@ -377,14 +377,14 @@ pub mod test_dla{
                         print_all(&old);
                         println!("########## new #########");
                         print_all(&new);
-                        println!("######### rust_code of old ######");
-                        println!("{}",generate_dla_rust_form(row,col,&old));
-                        println!("######### rust_code of new ######");
-                        println!("{}",generate_dla_rust_form(row,col,&new));
+                        // println!("######### rust_code of old ######");
+                        // println!("{}",generate_dla_rust_form(row,col,&old));
+                        // println!("######### rust_code of new ######");
+                        // println!("{}",generate_dla_rust_form(row,col,&new));
                         println!("########## com #########");
                         print_cmatrix_in_python_form(&clcom);
-                        println!("######### rust code of com #######");
-                        println!("{}",generate_cmatrix_rust_form(&clcom));
+                        // println!("######### rust code of com #######");
+                        // println!("{}",generate_cmatrix_rust_form(&clcom));
                         println!("########## gs_com #########");
                         print_cmatrix_in_python_form(&gs_com);
                         panic!("{}","gs_com is not vertical against new".red());
