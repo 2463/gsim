@@ -478,7 +478,7 @@ pub mod test_rep{
 
     fn is_vertical(c1:&CMatrix2,c2:&CMatrix2)->bool{
         let result = c1.dot(&c2);
-        result.abs() < 1.0e-9
+        result.abs() < 1.0e-9 * (c1.ncols() * c2.nrows() * 2) as f64
     }
 
     pub fn is_system_vertical(target: &CMatrix2, system: &Vec<CMatrix2>)->bool{

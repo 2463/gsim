@@ -64,7 +64,7 @@ pub fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
 }
 
 pub fn is_zero(matrix: &CMatrix2)->bool{
-    matrix.norm() < 1.0e-9
+    matrix.norm() < 1.0e-9 * (matrix.ncols() * matrix.nrows() * 2) as f64
 }
 
 fn new_old_commutators(new: &Vec<CMatrix2>, old: &Vec<CMatrix2>, m: &MultiProgress)->Vec<CMatrix2>{
