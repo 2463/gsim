@@ -84,7 +84,8 @@ fn gram_schmidt(target: CMatrix2,base: &CMatrix2)->CMatrix2{
 }
 
 pub fn normalize(c:&CMatrix2)->CMatrix2{
-    if c.norm() < 1.0e-7 * (c.nrows() * c.ncols() * 2) as f64{
+    // ここのしきい値を動的に変えるシステムを考える．（e-4 とかじゃないと0以外を）
+    if c.norm() < 1.0e-4 * (c.nrows() * c.ncols() * 2) as f64{
         return CMatrix2::zeros(c.nrows(), c.ncols());
     }
     c * Complex64::new(1.0 / c.norm(),0.0)

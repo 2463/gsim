@@ -112,6 +112,7 @@ pub(super) fn commutator(hamiltonian_a :  &CMatrix2, hamiltonian_b : &CMatrix2)-
 #[cfg(test)]
 pub mod test_dla{
 
+    use std::fmt::format;
     use std::result;
 
     use super::*;
@@ -302,14 +303,11 @@ pub mod test_dla{
         matrix.map(|x|->Complex<f64>{return round!(x,1000.0)})
     }
 
-    const NUMBER_OF_QUBIT:usize = 3;
+    const NUMBER_OF_QUBIT:usize = 4;
 
     pub fn get_dla_intest(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         // プログレスバー作成
         let m = MultiProgress::new();
-        let pb_spinner = m.add(ProgressBar::new_spinner());
-        let spinner_style = ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] {wide_msg}").unwrap();
-        pb_spinner.set_style(spinner_style);
 
         // まず入力を gs で直交化させておく．ここでハミルトニアンは後で使うので clone する
         let mut gs_vohs = rep::get_schmit_basis(vector_of_hamiltonians.clone());
@@ -335,18 +333,28 @@ pub mod test_dla{
                 None=>{return old;},
                 Some(i)=>i
             });
+            let mut iternum = 0;
             while !new.is_empty() {
+                iternum += 1;
                 //2. new group と old group の間で全パターン commutator を取り，その結果を comm group とする
                 let coms = [new_old_commutators(&new, &old, &m),new_new_commutator(&new, &m)].concat();
                 //3. new group を old group に加える．new group を空にする（append）
                 old.append(&mut new);
-    
-    
+
+                // pb作成
+                let pb = m.add(ProgressBar::new((coms.len())as u64));
+                let bar_style = ProgressStyle::with_template(
+                    "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos:>7}/{len:7}  ({eta})\n{msg}"
+                )
+                .unwrap();
+                pb.set_style(bar_style);
+                pb.set_message("checking independency of commutators");
+            
                 // 4. commutator が 0 でなく，old group と new group に対して独立だったら new groupに加える．これをcomm group すべてに実行
                 for com in coms{
                     let clcom = com.clone();
-                    pb_spinner.set_message(format!("current dim(DLA) : {}, candidate num : {}",old.len(),new.len()));
-                    pb_spinner.inc(1);
+                    pb.set_message(format!("checking commutator independency : current dim(DLA) : {}, candidate num : {}, current iteration : {}",old.len(),new.len(),iternum));
+                    pb.inc(1);
 
                     if is_zero(&com){println!("is not ind");continue;}
                     let gs_com = rep::gs_system(com,&old);
@@ -392,6 +400,7 @@ pub mod test_dla{
                     let gs_com = super::rep::normalize(&gs_com);
                     new.push(gs_com);
                 }
+                pb.finish_and_clear();
             }
         }
         old
