@@ -15,16 +15,16 @@ fn get_unitary(hamiltonian:&CMatrix2,parameter:&Complex64)->CMatrix2{
 }
 
 // 2.
-fn get_e_in(init_density_mat:CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
+fn get_e_in(init_density_mat:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     let mut result:RVec = RVec::zeros(gs_dla.len());
     for i in 0..gs_dla.len(){
-        result[i] = (&gs_dla[i] * &init_density_mat).trace().im();
+        result[i] = (&gs_dla[i] * init_density_mat).trace().im();
     }
     result
 }
 
 // 3.
-fn decompose_obs(observable:CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
+fn decompose_obs(observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     let mut w = RVec::zeros(gs_dla.len());
     for i in 0..gs_dla.len(){
         w[i] = -observable.dot(&gs_dla[i]).re();
@@ -32,8 +32,8 @@ fn decompose_obs(observable:CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     w
 }
 
-pub(super) fn get_e_out(init_density_mat:CMatrix2,parameters:Vec<Complex64>,hamiltonians:&Vec<CMatrix2>,gs_dla:&Vec<CMatrix2>)->RVec{
-    let e_in = get_e_in(init_density_mat, gs_dla);
+pub(super) fn get_e_out(init_density_mat:&CMatrix2,parameters:&Vec<Complex64>,hamiltonians:&Vec<CMatrix2>,gs_dla:&Vec<CMatrix2>)->RVec{
+    let e_in = get_e_in(&init_density_mat, gs_dla);
     let mut rep_unitaries = Vec::new();
     for (parameter, hamiltonian) in parameters.iter().zip(hamiltonians.iter()){
         rep_unitaries.push(rep::adjoint_rep(get_unitary(hamiltonian, parameter),gs_dla));
@@ -48,7 +48,7 @@ pub(super) fn get_e_out(init_density_mat:CMatrix2,parameters:Vec<Complex64>,hami
     e_out
 }
 
-pub(super) fn get_prob(e_out:RVec,observable:CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
+pub(super) fn get_prob(e_out:RVec,observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     let w = decompose_obs(observable, gs_dla);
     w * e_out
 }

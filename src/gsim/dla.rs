@@ -9,7 +9,7 @@ type CMatrix2 = DMatrix<Complex64>;
 /// # dla_gs.rs
 /// dla を求める途中で Gram-Schmidt で直交化させていく関数
 
-pub fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
+pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         // プログレスバー作成
         let m = MultiProgress::new();
 
@@ -82,7 +82,7 @@ pub fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         old
 }
 
-pub fn is_zero(matrix: &CMatrix2)->bool{
+pub(super) fn is_zero(matrix: &CMatrix2)->bool{
     matrix.norm_squared() < 1.0e-9 * (matrix.ncols() * matrix.nrows() * 2) as f64
 }
 
