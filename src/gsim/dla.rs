@@ -1,13 +1,13 @@
-/// # dla_gs.rs
-/// dla を求める途中で Gram-Schmidt で直交化させていく関数
-use num::complex::Complex64;
-use nalgebra::DMatrix;
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use super::rep;
+use nalgebra::DMatrix;
+use num::complex::Complex64;
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use itertools::Itertools;
 
-
 type CMatrix2 = DMatrix<Complex64>;
+
+/// # dla_gs.rs
+/// dla を求める途中で Gram-Schmidt で直交化させていく関数
 
 pub fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         // プログレスバー作成
@@ -153,6 +153,8 @@ pub mod test_dla{
         matrix
     }
 
+    const NUMBER_OF_QUBIT:usize = 1;
+
     #[test]
     fn test_get_dla(){
         let n = NUMBER_OF_QUBIT;
@@ -175,6 +177,22 @@ pub mod test_dla{
             print!(",");
         }
     }
+
+    pub fn print_cmatrix_in_python_form(mat: &CMatrix2){
+        print!("[");
+        for elem in mat.iter(){
+            print_complex_in_python_form(elem);
+            print!(",")
+        }
+        print!("]\n");
+    }
+
+    fn print_complex_in_python_form(c: &Complex64){
+        print!("{}+{}j",c.re,c.im)
+    }
+
+
+    // ####################################### testers ####################################
 
     // let mut vector_of_cmat: Vec<CMatrix2> = Vec::new();
     // let row = 2;
@@ -231,20 +249,6 @@ pub mod test_dla{
     // fn generate_complex_string_in_python_form(c:&Complex64)->String{
     //     format!("{}+{}j",c.re,c.im)
     // }
-
-    pub fn print_cmatrix_in_python_form(mat: &CMatrix2){
-        print!("[");
-        for elem in mat.iter(){
-            print_complex_in_python_form(elem);
-            print!(",")
-        }
-        print!("]\n");
-    }
-
-    fn print_complex_in_python_form(c: &Complex64){
-        print!("{}+{}j",c.re,c.im)
-    }
-    const NUMBER_OF_QUBIT:usize = 4;
 
     pub fn get_dla_intest(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         // プログレスバー作成

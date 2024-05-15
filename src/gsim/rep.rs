@@ -1,14 +1,14 @@
-use crate::gsim::dla::{self, is_zero};
-use super::dla::commutator;
+use super::dla;
 use nalgebra::DMatrix;
 use num::complex::Complex64;
 
 type CMatrix2 = DMatrix<Complex64>;
+type Matrix2 = DMatrix<f64>;
 
 // DLA からシュミット直交基底を得る
 // 共役表現でハミルトニアンを低次元に写像する
 
-pub fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
+pub(super) fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
     let first_element = dla.pop().expect("The vector is empty");
 
     let mut sch_basis: Vec<CMatrix2> = vec![first_element];
@@ -20,35 +20,18 @@ pub fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
     sch_basis
 }
 
-pub fn adjoint_rep(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
+pub(super) fn adjoint_rep(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->Matrix2{
     let dim = sch_basis.len();
-    let mut rep = DMatrix::zeros(dim,dim);
+    let mut rep = Matrix2::zeros(dim,dim);
     for (i,j) in itertools::iproduct!(0..dim, 0..dim){
-        let value = &target * commutator(&sch_basis[i], &sch_basis[j]);
-        rep[(i,j)] = value.trace();
+        let value = &target * dla::commutator(&sch_basis[i], &sch_basis[j]);
+        rep[(i,j)] = value.trace().im;
     }
     rep
 }
 
-// // c_n - \sum_i (<c_i,c_n>/<c_i,c_i>)c_i を計算する場所
-// pub(super) fn make_new_base(target: CMatrix2,basis: &Vec<CMatrix2>)->CMatrix2{
-//     let mut result = target.clone();
-
-//     for base in basis{
-//         let coef = base.dot(&target) / base.dot(&base);
-//         result = result - (base * coef);
-//     }
-
-//     if dla::is_zero(&result){
-//         return result;
-//     }
-    
-//     // normalize はよくない?
-//     normalize(&result)
-// }
-
-pub fn gs_system(target: CMatrix2,system: &Vec<CMatrix2>)->CMatrix2{
-    if is_zero(&target){
+pub(super) fn gs_system(target: CMatrix2,system: &Vec<CMatrix2>)->CMatrix2{
+    if dla::is_zero(&target){
         return CMatrix2::zeros(target.nrows(), target.ncols());
     }
     let mut gs = target;
@@ -64,20 +47,13 @@ pub fn gs_system(target: CMatrix2,system: &Vec<CMatrix2>)->CMatrix2{
     // println!("gs [return]: {}",generate_cmatrix_string_in_python_form(&normalize(&gs)));
     gs
 }
+
 fn gram_schmidt(target: CMatrix2,base: &CMatrix2)->CMatrix2{
     let result = &target - base * (base.dot(&target) / base.dot(&base));
     result
 }
 
-pub fn normalize(c:&CMatrix2)->CMatrix2{
-    // ここのしきい値を動的に変えるシステムを考える．（e-4 とかじゃないと0以外を）
-    // if c.norm() < 1.0e-9 * (c.nrows() * c.ncols() * 2) as f64{
-    //     return CMatrix2::zeros(c.nrows(), c.ncols());
-    // }
-    c * Complex64::new(1.0 / c.norm(),0.0)
-}
-
-pub fn smallize(c:&CMatrix2)->CMatrix2{
+pub(super) fn smallize(c:&CMatrix2)->CMatrix2{
     // 1より大きい場合のみ小さくする
     if c.norm() < 1.0{
         return c.clone();
@@ -98,15 +74,6 @@ pub mod test_rep{
     }
 
 
-    // fn make_minus(target:&CMatrix2,base:&CMatrix2)->CMatrix2{
-    //     let mut minus: CMatrix2 = DMatrix::zeros(target.ncols(),target.nrows());
-    
-    //     let coef = base.dot(&target) / base.dot(&base);
-    //     minus = (base * coef) + minus;
-    
-    //     minus
-    // }    
-
     fn check_hermitian(matrix: &CMatrix2) -> bool {
         let (rows, cols) = (matrix.ncols(),matrix.nrows());
         for i in 0..rows {
@@ -126,6 +93,15 @@ pub mod test_rep{
         }
         result
     }
+
+    fn normalize(c:&CMatrix2)->CMatrix2{
+        // ここのしきい値を動的に変えるシステムを考える．（e-4 とかじゃないと0以外を）
+        // if c.norm() < 1.0e-9 * (c.nrows() * c.ncols() * 2) as f64{
+        //     return CMatrix2::zeros(c.nrows(), c.ncols());
+        // }
+        c * Complex64::new(1.0 / c.norm(),0.0)
+    }
+    
 
     #[test]
     fn hermitiy_test(){
@@ -196,6 +172,16 @@ pub mod test_rep{
         mat
     }
 
+    fn adjoint_rep_intest(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
+        let dim = sch_basis.len();
+        let mut rep = CMatrix2::zeros(dim,dim);
+        for (i,j) in itertools::iproduct!(0..dim, 0..dim){
+            let value = &target * dla::commutator(&sch_basis[i], &sch_basis[j]);
+            rep[(i,j)] = value.trace();
+        }
+        rep
+    }
+
     #[test]
     fn check_ajoint_rep_imaginary(){
         let ham_a = make_random_hermitian(4,4);
@@ -215,8 +201,9 @@ pub mod test_rep{
         }
         let len = dla.len()as i16;
         let basis = get_schmit_basis(dla);
-        let adjoint_a = adjoint_rep(vector[0].clone(), &basis);
+        let adjoint_a = adjoint_rep_intest(vector[0].clone(), &basis);
         println!("😊adjoint_a:\n {:}",reshape(&adjoint_a, len * len , 1));
+        // 純複素数行列が得られるはず
         assert!(adjoint_a.iter().all(|&z| z.re <= 1.0e-7));
     }
 
