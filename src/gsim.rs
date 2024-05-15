@@ -16,6 +16,7 @@ pub struct GSim {
     pub parameters: Vec<Complex64>,
     pub hamiltonians: Vec<CMatrix2>,
     pub dla: Vec<CMatrix2>,
+    pub dla_ready: bool,
 }
 
 pub trait GenerateDLA{
@@ -34,6 +35,9 @@ impl GenerateDLA for GSim{
 
 impl Simulate for GSim {
     fn simulate(&self)->RVec {
+        if !self.dla_ready{
+            panic!("dla is not ready.")
+        }
         let e_out = get_e_out(
             &self.init_density_matrix,
             &self.parameters,
