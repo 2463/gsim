@@ -2,47 +2,77 @@ pub mod rep;
 pub mod sim;
 pub mod dla;
 
+use core::panic;
+
 use nalgebra::{DMatrix, DVector};
 use num::complex::Complex64;
-
-use self::sim::{get_e_out, get_prob};
 
 type CMatrix2 = DMatrix<Complex64>;
 type RVec = DVector<f64>;
 
 pub struct GSim {
-    pub init_density_matrix:CMatrix2,
-    pub observable: CMatrix2,
-    pub parameters: Vec<Complex64>,
-    pub hamiltonians: Vec<CMatrix2>,
-    pub dla: Vec<CMatrix2>,
-    pub dla_ready: bool,
+    init_density_matrix:CMatrix2,
+    observable: CMatrix2,
+    parameters: Option<Vec<Complex64>>,
+    hamiltonians: Vec<CMatrix2>,
+    dla: Option<Vec<CMatrix2>>,
+    e_in: Option<RVec>,
 }
 
 pub trait GenerateDLA{
-    fn get_dla(&self)->Vec<CMatrix2>;
+    fn prepare_dla(&mut self);
 }
 
-pub trait Simulate{
-    fn simulate(&self)->RVec;
-}
+impl GSim {
+    pub fn new(
+        init_density_matrix:CMatrix2,
+        observable:CMatrix2,
+        hamiltonians:Vec<CMatrix2>
+    )->GSim {
+        GSim {
+            init_density_matrix,
+            observable,
+            hamiltonians,
+            parameters: None,
+            dla: None,
+            e_in: None,
+        }
+    }
 
-impl GenerateDLA for GSim{
-    fn get_dla(&self)->Vec<CMatrix2>{
-        dla::get_dla(&self.hamiltonians)
+    pub fn set_parameters(&mut self,parameters:Vec<Complex64>){
+        self.parameters = Some(parameters);
+    }
+
+    pub fn set_initial_density_matrix(&mut self,initial_density_matrix:CMatrix2){
+        self.init_density_matrix = initial_density_matrix;
+        self.e_in = None;
+    }
+
+    pub fn set_observable(&mut self,observable:CMatrix2){
+        self.observable = observable;
+    }
+
+    pub fn get_dla(&self)->Vec<CMatrix2>{
+        return self.dla.clone().expect("DLA is not generated yet.")
+    }
+
+    pub fn prepare_e_in(&mut self) {
+        if self.dla == None{panic!("dla is not prepared.")}
+        self.e_in = Some(sim::get_e_in(&self.init_density_matrix, &self.dla.as_ref().unwrap()));
+    }
+
+    pub fn simulate(&self,gate_hamiltonians:Vec<CMatrix2>)->RVec {
+        let e_out = sim::get_e_out(
+            &self.e_in.as_ref().expect("e_in is not ready. use `.prepare_e_in()`"),
+            &self.parameters.as_ref().expect("parameters is not ready. use `set_parameters(parameters)`"),
+            gate_hamiltonians,
+            &self.dla.as_ref().expect("dla is not ready. use `.prepare_dla()`"));
+        sim::get_prob(e_out, &self.observable, &self.dla.as_ref().unwrap())
     }
 }
 
-impl Simulate for GSim {
-    fn simulate(&self)->RVec {
-        if !self.dla_ready{
-            panic!("dla is not ready.")
-        }
-        let e_out = get_e_out(
-            &self.init_density_matrix,
-            &self.parameters,
-            &self.hamiltonians,
-            &self.dla);
-        get_prob(e_out, &self.observable, &self.dla)
+impl GenerateDLA for GSim{
+    fn prepare_dla(&mut self){
+        self.dla = Some(dla::get_dla(&self.hamiltonians));
     }
 }

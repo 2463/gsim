@@ -1,3 +1,5 @@
+use std::vec;
+
 use super::rep;
 use nalgebra::DMatrix;
 use num::complex::Complex64;
@@ -15,6 +17,8 @@ pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
 
         // まず入力を gs で直交化させておく．ここでハミルトニアンは後で使うので clone する
         let mut gs_vohs = rep::get_schmit_basis(vector_of_hamiltonians.clone());
+        // さらに虚数化する．
+        imaginalize(&mut gs_vohs);
         // 直交化した gs で以下のアルゴリズムを実行
         //[Algorithm]
         //1. gs_vohsの前から1つ取り出して old group に入れる．次にもう一つ取り出して new group に入れる
@@ -79,11 +83,17 @@ pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
                 pb.finish_and_clear();
             }
         }
-        old
+        rep::normalize_all(old)
 }
 
 pub(super) fn is_zero(matrix: &CMatrix2)->bool{
     matrix.norm_squared() < 1.0e-9 * (matrix.ncols() * matrix.nrows() * 2) as f64
+}
+
+fn imaginalize(vector: &mut Vec<CMatrix2>){
+    for i in 0..vector.len(){
+        vector[i] = &vector[i] * Complex64::new(0.0, 1.0);
+    }
 }
 
 fn new_old_commutators(new: &Vec<CMatrix2>, old: &Vec<CMatrix2>, pb: &ProgressBar)->Vec<CMatrix2>{

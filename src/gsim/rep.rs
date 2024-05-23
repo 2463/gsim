@@ -20,12 +20,12 @@ pub(super) fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
     sch_basis
 }
 
-pub(super) fn adjoint_rep(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->Matrix2{
+pub(super) fn adjoint_rep(target:&CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
     let dim = sch_basis.len();
-    let mut rep = Matrix2::zeros(dim,dim);
+    let mut rep:CMatrix2 = CMatrix2::zeros(dim,dim);
     for (i,j) in itertools::iproduct!(0..dim, 0..dim){
-        let value = &target * dla::commutator(&sch_basis[i], &sch_basis[j]);
-        rep[(i,j)] = value.trace().im;
+        let value = target * dla::commutator(&sch_basis[i], &sch_basis[j]);
+        rep[(i,j)] = value.trace();
     }
     rep
 }
@@ -58,6 +58,17 @@ pub(super) fn smallize(c:&CMatrix2)->CMatrix2{
     if c.norm() < 1.0{
         return c.clone();
     }
+    normalize(c)
+}
+
+pub(super) fn normalize_all(mut cvec:Vec<CMatrix2>)->Vec<CMatrix2>{
+    for i in 0..cvec.len(){
+        cvec[i] = normalize(&cvec[i]);
+    }
+    cvec
+}
+
+fn normalize(c:&CMatrix2)->CMatrix2{
     c * Complex64::new(1.0 / c.norm(),0.0)
 }
 
