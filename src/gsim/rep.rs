@@ -3,8 +3,6 @@ use nalgebra::DMatrix;
 use num::complex::Complex64;
 
 type CMatrix2 = DMatrix<Complex64>;
-type Matrix2 = DMatrix<f64>;
-
 // DLA からシュミット直交基底を得る
 // 共役表現でハミルトニアンを低次元に写像する
 

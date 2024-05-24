@@ -29,8 +29,6 @@ mod tests {
     use nalgebra::DVector;
     use rand::Rng;
     
-    type CVec = DVector<Complex64>;
-    
     #[test]
     fn make_gsim_test(){
         const NUMBER_OF_QUBIT:u32 = 1;
@@ -38,15 +36,23 @@ mod tests {
         let z = test_sim::make_z_pauli();
         let hamiltonians = vec![x.clone(),z.clone()];
         let gate_hamiltonians = vec![x.clone()];
-        let number_of_parameters = hamiltonians.len();
+        let number_of_parameters = gate_hamiltonians.len();
         let init = make_zero_density_mat(NUMBER_OF_QUBIT);
         println!("initial state{:.3}",init);
         test_dla::print_cmatrix_in_python_form(&init);
         let mut gsim = make_gsim(init, x, hamiltonians);
-        let parameters = make_pi_2_parameters(number_of_parameters);
+        let parameters = make_1_parameters(number_of_parameters);
         let result = run_simulation(&mut gsim, parameters,gate_hamiltonians);
         println!("result : {:.3}",result);
         assert!(false);
+    }
+
+    fn make_1_parameters(number_of_parameters:usize)->Vec<Complex64>{
+        let mut parameters = Vec::new();
+        for _i in 0..number_of_parameters{
+            parameters.push(Complex64::new(1.0,0.0));
+        }
+        parameters
     }
 
     fn make_pi_2_parameters(number_of_parameters:usize)->Vec<Complex64>{
@@ -77,6 +83,8 @@ mod tests {
         let size = 2i64.pow(number_of_qubit) as usize;
         test_dla::make_random_hermitian(size,size)
     }
+
+    type CVec = DVector<Complex64>;
 
     fn make_random_init_density_mat(number_of_qubit:u32)->CMatrix2{
         let size = 2i64.pow(number_of_qubit) as usize;

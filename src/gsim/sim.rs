@@ -7,13 +7,15 @@ type CMatrix2 = DMatrix<Complex64>;
 type Matrix2 = DMatrix<f64>;
 type RVec = DVector<f64>;
 
+const I : Complex64 = Complex64::new(0.0,1.0);
+
 // 1. unitary を得る
 // 2. $e_in$ を作る．つまり，G の G_\alpha についての，初期状態 $\rho_in$ の測定期待値のベクトル $e_in$ を作成する
 // 3. obs を g の g の和によって表現する（ためのベクトル $w$ を得る : $O=\sum_\alpha w_\alpha G_\alpha$）
 
 // 1.
 fn get_unitary(hamiltonian:&CMatrix2,parameter:&Complex64)->Matrix2{
-    let result = (hamiltonian * *parameter * Complex64::new(0.0, -1.0)).exp();
+    let result = (hamiltonian * *parameter * I).exp();
     cast_in_real(&result)
 }
 
@@ -51,21 +53,21 @@ fn decompose_obs(observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
 pub(super) fn get_e_out(e_in:&RVec,parameters:&Vec<Complex64>,hamiltonians:Vec<CMatrix2>,gs_dla:&Vec<CMatrix2>)->RVec{
     let mut rep_unitaries = Vec::new();
     for (parameter, hamiltonian) in parameters.iter().zip(hamiltonians.iter()){
+        let ad_ham = rep::adjoint_rep(hamiltonian, gs_dla);
+        let ad_u = get_unitary(&ad_ham, &parameter);
         // println!(
-        //     "param {}\nhamiltonian{:.3}\nunitary{:.3}\nrep_unitary{:.3}",
+        //     "# param {}\n # hamiltonian{:.3}\n# unitary{:.3}\n# ad_ham{:.3}\n# parameter{}\n# ad_u{:.3}",
         //     parameter,
         //     hamiltonian,
         //     get_unitary(hamiltonian, parameter),
-        //     rep::adjoint_rep(get_unitary(hamiltonian, parameter),gs_dla));
-        rep_unitaries.push(get_unitary(&rep::adjoint_rep(hamiltonian,gs_dla), parameter));
+        //     ad_ham,
+        //     parameter,
+        //     ad_u
+        // );
+        rep_unitaries.push(ad_u);
     }
 
     let mut e_out = e_in.clone();
-
-    println!("e_in{:.3}",e_in);
-    println!("e_out = unitary * e_in");
-    println!("hamiltonian{:.3},unitary{:.3}",hamiltonians[0],get_unitary(&hamiltonians[0], &Complex64::new(1.57079632679,0.0)));
-    println!("rep_unitary{:.3}",rep_unitaries[0]);
 
     for unitary in rep_unitaries{
         e_out = unitary * e_in;
@@ -98,9 +100,6 @@ pub mod test_sim{
         z
     }
 
-    fn is_close(c:CMatrix2,d:CMatrix2)->bool{
-        (&c - d).norm() < 1.0e-7 * (c.ncols() * c.nrows() * 2) as f64
-    }
     #[test]
     fn get_e_in_test(){
         
