@@ -58,7 +58,6 @@ impl GSim {
     pub fn prepare_e_in(&mut self) {
         if self.dla == None{panic!("dla is not prepared.")}
         self.e_in = Some(sim::get_e(&self.init_density_matrix, &self.dla.as_ref().unwrap()));
-        // println!("## e_in{}",self.e_in.as_ref().unwrap());
     }
 
     pub fn simulate(&self,gate_hamiltonians:Vec<CMatrix2>)->f64 {

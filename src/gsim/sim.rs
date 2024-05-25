@@ -33,11 +33,11 @@ fn cast_in_real(cmat:CMatrix2)->Matrix2{
 pub(super) fn get_e(density_mat:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     let mut result:RVec = RVec::zeros(gs_dla.len());
     for i in 0..gs_dla.len(){
-        // println!(
-        //     "# e_in elemnt in get_e_in\n## dla{}\n## density mat{}## trace {}\n",
-        //     gs_dla[i],
-        //     density_mat,
-        //     (&gs_dla[i] * density_mat).trace());
+        println!(
+            "# e_in elemnt in get_e_in\n## dla{}\n## density mat{}## trace {}\n",
+            gs_dla[i],
+            density_mat,
+            (&gs_dla[i] * density_mat).trace());
         result[i] = (&gs_dla[i] * density_mat).trace().im();
     }
     result
@@ -48,7 +48,7 @@ fn decompose_obs(observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     let imaginalized_obs = observable * I;
     let mut w = RVec::zeros(gs_dla.len());
     for i in 0..gs_dla.len(){
-        w[i] = rep::ip(&imaginalized_obs,&gs_dla[i]).re;
+        w[i] = rep::ip(&imaginalized_obs,&gs_dla[i]).re; //歪エルミート同士をかけあわせている
     }
     println!("w :\n{}",w);
     w

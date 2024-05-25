@@ -13,6 +13,7 @@ pub(super) fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
     while let Some(element) = dla.pop() {
         let new_base = gs_system(element, &sch_basis);
         let new_base = smallize(&new_base);
+        println!("new_base norm {}",new_base.norm_squared());
         sch_basis.push(new_base);
     }
     sch_basis
@@ -53,8 +54,12 @@ fn gram_schmidt(target: CMatrix2,base: &CMatrix2)->CMatrix2{
 }
 
 pub(crate)fn ip(a:&CMatrix2,b:&CMatrix2)->Complex64{
-    // フロベニウスノルムの内積．つまり $<A,B> = tr(AB)$
-    // ここでハミルトニアンしか入らないならば，$B = B^*$ であるので，$\sum_ka_k*b_k^* = (a_1,...)*(b_1^*,...)$ と還元できる
+    // ip = (inner product) フロベニウスノルムの内積．つまり $<A,B> = tr(AB)$
+    // ここでハミルトニアンしか入らないならば，エルミート性から $B = B^*$ であるので，
+    // $<A,B> = tr(AB)=tr(AB^*)=\sum_ka_k*b_k^* = (a_1,...)*(b_1^*,...)$ と還元できる
+    // 歪エルミート $iA,iB$ が入る場合のノルムも同様に
+    // $<iA,iB> := tr(iA(iB)^*) = (ia_1,...)*((ib_1)^*,..)=(a_1,...)*(b_1^*,...)$ と定義する．すると
+    // $<iA,iB> = <A,B>$ が成立するので，A = \sum_k<iA,iB_k>B_k を満たし，w 計算時(decompose_obs)に便利
     a.dot(&b.conjugate())
 }
 

@@ -26,13 +26,11 @@ mod tests {
     use crate::gsim::sim::test_sim;
     use nalgebra::DVector;
     use rand::Rng;
-    use num::Complex;
 
     type RVec = DVector<f64>;
 
     const NUMBER_OF_QUBIT : u32 = 1;
-    const NUMBER_OF_GATES : u32 = 2;
-    const I : Complex64 = Complex64::new(0.0,1.0);
+    const NUMBER_OF_GATES : u32 = 10;
     const MINUS_I: Complex64 = Complex64::new(0.0,-1.0);
     
     #[test]
@@ -109,69 +107,6 @@ mod tests {
     }
 
     #[test]
-    fn make_gsim_fixed_test(){
-        let row = 2;
-        let col = 2;
-        let init = CMatrix2::from_vec(row,col,vec![
-            Complex::new(0.06780365607161457,0.0),
-            Complex::new(0.14774422302913814,0.20341574387557385),
-            Complex::new(0.14774422302913814,-0.20341574387557385),
-            Complex::new(0.9321963439283855,0.0),
-            ]);
-        println!("init {}",init);
-        let init_clone = init.clone();
-        let ham0 = CMatrix2::from_vec(row,col,vec![
-            Complex::new(-0.8,0.0),
-            Complex::new(0.9,-1.0),
-            Complex::new(0.9,1.0),
-            Complex::new(0.2,0.0),
-            ]);
-        let ham1 =CMatrix2::from_vec(row,col,vec![
-            Complex::new(0.9,0.0),
-            Complex::new(-0.2,-0.6),
-            Complex::new(-0.2,0.6),
-            Complex::new(-0.2,0.0),
-            ]);
-        let hams = vec![ham0,ham1];
-        let hams_clone = hams.clone();
-        let obs = hams[0].clone();
-        let obs_clone = hams[0].clone();
-        println!("obs{}",obs);
-        let paras = vec![0.4,0.1];
-        let paras_clone = paras.clone();
-        let mut gsim = make_gsim(init, obs, &hams);
-        gsim.set_parameters(paras.clone());
-        let result = run_simulation(&mut gsim, paras, hams);
-        
-        // 通常シミュレーション
-        let mut unis = Vec::new();
-        for (ham,para) in hams_clone.iter().zip(paras_clone){
-            // println!("param:{},hamiltonian{},unitary{}",para,ham,get_unitary(ham, &para));
-            unis.push(get_unitary(ham, para));
-        }
-        let mut end_state = init_clone;
-        for unitary in unis{
-            // println!(
-            //     "############# state{}\nunitary{}\n",
-            //     end_state,
-            //     unitary,
-            // );
-            end_state = &unitary * &end_state * &unitary.adjoint();
-        }
-        // println!("end_state{}",end_state);
-        let e_out_simulation = get_e_test(&end_state, &gsim.get_dla());
-        println!("e_out of normal simulation\n{}",e_out_simulation);
-
-        let normal_result = (&obs_clone * &end_state).trace();
-
-        println!("expectation val(normal): {}",normal_result);
-        println!("expectation val (gsim): {}",result);
-        assert!(false);
-        
-    }
-
-
-    #[test]
     fn make_gsim_random_test(){
         let init = make_random_init_density_mat(NUMBER_OF_QUBIT);
         println!(
@@ -224,8 +159,8 @@ mod tests {
 
         println!("expectation val(normal): {}",normal_result);
         println!("expectation val (gsim): {}",result);
-        assert!(result == normal_result.re,"Difference of gsim and normal is {}",(result - normal_result.re).abs());
-        // assert!(true);
+        let diff = (result - normal_result.re).abs();
+        assert!(diff < 1.0e-7,"Difference of gsim and normal is {}",diff);
     }
 
     fn get_e_test(density_mat:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
@@ -237,32 +172,6 @@ mod tests {
     }
 
         // ####################################### testers ####################################
-
-    // let mut vector_of_cmat: Vec<CMatrix2> = Vec::new();
-    // let row = 2;
-    // let col = 2;
-    // vector_of_cmat.push(CMatrix2::from_vec(row,col,vec![
-    //     Complex::new(0.5, 0.0),
-    //     Complex::new(0.5, 0.0)
-    // ]));
-    pub fn generate_dla_rust_form(row:usize,col:usize,matrices: &Vec<CMatrix2>)->String{
-        let mut result = String::from("");
-        let first_line = "    let mut vector_of_cmat: Vec<CMatrix2> = Vec::new();\n";
-        let second_line = format!("   let row = {};\n",row);
-        let third_line = format!("    let col = {};\n",col);
-        result.push_str(&first_line);
-        result.push_str(&second_line);
-        result.push_str(&third_line);
-        for mat in matrices{
-            let top = "        vector_of_cmat.push(";
-            result.push_str(top);
-            let matrix_str = generate_cmatrix_rust_form(mat);
-            result.push_str(&matrix_str);
-            let bottom = ");\n";
-            result.push_str(bottom);
-        }
-        result
-    }
 
     // CMatrix2::from_vec(row,col,vec![
     //     Complex::new(0.5, 0.0),
