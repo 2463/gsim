@@ -19,11 +19,11 @@ pub(super) fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
     sch_basis
 }
 
-pub(super) fn adjoint_rep(target:&CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
+pub(super) fn adjoint_rep(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
     let dim = sch_basis.len();
     let mut rep:CMatrix2 = CMatrix2::zeros(dim,dim);
     for (i,j) in itertools::iproduct!(0..dim, 0..dim){
-        let value = target * dla::commutator(&sch_basis[i], &sch_basis[j]);
+        let value = &target * dla::commutator(&sch_basis[i], &sch_basis[j]);
         rep[(i,j)] = value.trace();
     }
     // println!("## adjoint_rep\ntarget{:.3}",target);
@@ -194,7 +194,7 @@ pub mod test_rep{
         }
         let len = dla.len()as i16;
         let basis = get_schmit_basis(dla);
-        let adjoint_a = adjoint_rep(&vector[0].clone(), &basis);
+        let adjoint_a = adjoint_rep(vector[0].clone(), &basis);
         println!("😊adjoint_a:\n {:}",reshape(&adjoint_a, len * len , 1));
         // 純複素数行列が得られるはず
         assert!(adjoint_a.iter().all(|&z| z.re <= 1.0e-7));

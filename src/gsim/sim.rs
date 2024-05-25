@@ -1,6 +1,7 @@
 use super::rep;
 use nalgebra::{DMatrix, DVector};
 use num::complex::{Complex64, ComplexFloat};
+use indicatif::{ProgressBar, ProgressStyle};
 use itertools;
 
 type CMatrix2 = DMatrix<Complex64>;
@@ -54,31 +55,77 @@ fn decompose_obs(observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     w
 }
 
-pub(super) fn get_e_out(e_in:&RVec,parameters:&Vec<f64>,hamiltonians:Vec<CMatrix2>,gs_dla:&Vec<CMatrix2>)->RVec{
-    let mut rep_unitaries = Vec::new();
-    for (parameter, hamiltonian) in parameters.iter().zip(hamiltonians.iter()){
-        let ad_ham = rep::adjoint_rep(hamiltonian, gs_dla);
-        let ad_u = get_unitary(&ad_ham, *parameter);
-        // println!(
-        //     "# param {}\n # hamiltonian{:.3}\n# unitary{:.3}\n# ad_ham{:.3}\n# parameter{}\n# ad_u{:.3}",
-        //     parameter,
-        //     hamiltonian,
-        //     get_unitary(hamiltonian, parameter),
-        //     ad_ham,
-        //     parameter,
-        //     ad_u
-        // );
-        rep_unitaries.push(ad_u);
+pub(super) fn get_ad_rep_gate_hams(gate_hams:Vec<CMatrix2>,dla:&Vec<CMatrix2>)->Vec<CMatrix2>{
+    // (get adjoint represented gate hamiltonians)
+    let pb = ProgressBar::new(gate_hams.len() as u64);
+    let bar_style = ProgressStyle::with_template(
+        "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos:>7}/{len:7} ({eta})\n{msg}"
+    )
+    .unwrap();
+    pb.set_style(bar_style);
+    pb.set_message("Making adjoint representation of gate hamiltonians...");
+
+    let mut result :Vec<CMatrix2> = Vec::new();
+    for ham in gate_hams{
+        pb.inc(1);
+        let ad_ham = rep::adjoint_rep(ham, dla);
+        result.push(ad_ham);
     }
+    result
+}
+
+pub(super) fn get_e_out(e_in:&RVec,params_and_gate_nums:&Vec<(f64,usize)>,ad_reped_gate_hams:&Vec<CMatrix2>)->RVec{
+    let pb = ProgressBar::new(params_and_gate_nums.len() as u64);
+    let bar_style = ProgressStyle::with_template(
+        "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos:>7}/{len:7} ({eta})\n{msg}"
+    )
+    .unwrap();
+    pb.set_style(bar_style);
+    pb.set_message("Simulating with gsim...");
 
     let mut e_out = e_in.clone();
-
-    for unitary in rep_unitaries{
-        e_out = unitary * e_out;
+    for (param,number) in params_and_gate_nums{
+        pb.inc(1);
+        let ad_u = get_unitary(&ad_reped_gate_hams[*number], *param);
+        e_out = ad_u * e_out;
     }
-
     e_out
 }
+
+// pub(super) fn get_e_out_dep(e_in:&RVec,parameters:&Vec<f64>,hamiltonians:Vec<CMatrix2>,gs_dla:&Vec<CMatrix2>)->RVec{
+//     let mut rep_unitaries = Vec::new();
+//     let pb = ProgressBar::new(parameters.len() as u64);
+//     let bar_style = ProgressStyle::with_template(
+//         "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos:>7}/{len:7} ({eta})\n{msg}"
+//     )
+//     .unwrap();
+//     pb.set_style(bar_style);
+//     pb.set_message("Simulating with gsim...");
+
+//     for (parameter, hamiltonian) in parameters.iter().zip(hamiltonians.iter()){
+//         pb.inc(1);
+//         let ad_ham = rep::adjoint_rep(hamiltonian, gs_dla);
+//         let ad_u = get_unitary(&ad_ham, *parameter);
+//         // println!(
+//         //     "# param {}\n # hamiltonian{:.3}\n# unitary{:.3}\n# ad_ham{:.3}\n# parameter{}\n# ad_u{:.3}",
+//         //     parameter,
+//         //     hamiltonian,
+//         //     get_unitary(hamiltonian, parameter),
+//         //     ad_ham,
+//         //     parameter,
+//         //     ad_u
+//         // );
+//         rep_unitaries.push(ad_u);
+//     }
+
+//     let mut e_out = e_in.clone();
+
+//     for unitary in rep_unitaries{
+//         e_out = unitary * e_out;
+//     }
+
+//     e_out
+// }
 
 pub(super) fn get_prob(e_out:RVec,observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->f64{
     let w = decompose_obs(observable, gs_dla);
