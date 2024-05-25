@@ -1,9 +1,8 @@
-pub mod rep;
-pub mod sim;
-pub mod dla;
+pub(crate) mod rep;
+pub(crate) mod sim;
+pub(crate) mod dla;
 
 use core::panic;
-
 use nalgebra::{DMatrix, DVector};
 use num::complex::Complex64;
 
@@ -13,7 +12,7 @@ type RVec = DVector<f64>;
 pub struct GSim {
     init_density_matrix:CMatrix2,
     observable: CMatrix2,
-    parameters: Option<Vec<Complex64>>,
+    parameters: Option<Vec<f64>>,
     hamiltonians: Vec<CMatrix2>,
     dla: Option<Vec<CMatrix2>>,
     e_in: Option<RVec>,
@@ -39,7 +38,7 @@ impl GSim {
         }
     }
 
-    pub fn set_parameters(&mut self,parameters:Vec<Complex64>){
+    pub fn set_parameters(&mut self,parameters:Vec<f64>){
         self.parameters = Some(parameters);
     }
 
@@ -58,16 +57,25 @@ impl GSim {
 
     pub fn prepare_e_in(&mut self) {
         if self.dla == None{panic!("dla is not prepared.")}
-        self.e_in = Some(sim::get_e_in(&self.init_density_matrix, &self.dla.as_ref().unwrap()));
+        self.e_in = Some(sim::get_e(&self.init_density_matrix, &self.dla.as_ref().unwrap()));
+        // println!("## e_in{}",self.e_in.as_ref().unwrap());
     }
 
-    pub fn simulate(&self,gate_hamiltonians:Vec<CMatrix2>)->RVec {
+    pub fn simulate(&self,gate_hamiltonians:Vec<CMatrix2>)->f64 {
         let e_out = sim::get_e_out(
             &self.e_in.as_ref().expect("e_in is not ready. use `.prepare_e_in()`"),
-            &self.parameters.as_ref().expect("parameters is not ready. use `set_parameters(parameters)`"),
+            self.parameters.as_ref().expect("parameters is not ready. use `set_parameters(parameters)`"),
             gate_hamiltonians,
             &self.dla.as_ref().expect("dla is not ready. use `.prepare_dla()`"));
         sim::get_prob(e_out, &self.observable, &self.dla.as_ref().unwrap())
+    }
+
+    pub(crate) fn get_e_out(&self,gate_hamiltonians:&Vec<CMatrix2>)->RVec{
+        sim::get_e_out(
+            &self.e_in.as_ref().expect("e_in is not ready. use `.prepare_e_in()`"),
+            &self.parameters.as_ref().expect("parameters is not ready. use `set_parameters(parameters)`"),
+            gate_hamiltonians.clone(),
+            &self.dla.as_ref().expect("dla is not ready. use `.prepare_dla()`"))
     }
 }
 

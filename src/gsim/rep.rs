@@ -25,6 +25,7 @@ pub(super) fn adjoint_rep(target:&CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
         let value = target * dla::commutator(&sch_basis[i], &sch_basis[j]);
         rep[(i,j)] = value.trace();
     }
+    // println!("## adjoint_rep\ntarget{:.3}",target);
     rep
 }
 
@@ -47,8 +48,14 @@ pub(super) fn gs_system(target: CMatrix2,system: &Vec<CMatrix2>)->CMatrix2{
 }
 
 fn gram_schmidt(target: CMatrix2,base: &CMatrix2)->CMatrix2{
-    let result = &target - base * (base.dot(&target) / base.dot(&base));
+    let result = &target - base * (ip(base,&target) / ip(base, base));
     result
+}
+
+pub(crate)fn ip(a:&CMatrix2,b:&CMatrix2)->Complex64{
+    // フロベニウスノルムの内積．つまり $<A,B> = tr(AB)$
+    // ここでハミルトニアンしか入らないならば，$B = B^*$ であるので，$\sum_ka_k*b_k^* = (a_1,...)*(b_1^*,...)$ と還元できる
+    a.dot(&b.conjugate())
 }
 
 pub(super) fn smallize(c:&CMatrix2)->CMatrix2{
@@ -72,13 +79,12 @@ fn normalize(c:&CMatrix2)->CMatrix2{
 
 #[cfg(test)]
 pub mod test_rep{
+    use super::*;
     use super::super::dla::test_dla::*;
     use itertools::Itertools;
     use num::{complex::ComplexFloat, pow::Pow, Complex};
 
-    use super::*;
-
-    pub fn check_linear_ind_intest(matrix_a : &CMatrix2, matrix_b : &CMatrix2)->bool{
+    pub(crate) fn check_linear_ind_intest(matrix_a : &CMatrix2, matrix_b : &CMatrix2)->bool{
         (matrix_a.dot(matrix_a) * matrix_b.dot(matrix_b) - matrix_a.dot(matrix_b).powi(2)).abs() > 1.0e-7
     }
 
@@ -95,7 +101,7 @@ pub mod test_rep{
         true
     }
 
-    pub fn normalize_all(input : Vec<CMatrix2>)->Vec<CMatrix2>{
+    pub(crate) fn normalize_all(input : Vec<CMatrix2>)->Vec<CMatrix2>{
         let mut result = Vec::new();
         for i in input{
             result.push(normalize(&i));
@@ -132,24 +138,7 @@ pub mod test_rep{
         let result = c1.dot(&c2);
         result.re().pow(2) + result.im().pow(2) < 1.0e-9 * (c1.ncols() * c2.nrows() * 2) as f64
     }
-
-    pub fn is_system_vertical(target: &CMatrix2, system: &Vec<CMatrix2>)->bool{
-        for system_mat in system{
-            if ! is_vertical(target, system_mat){
-                println!("ip val: {:e}",target.dot(&system_mat).abs());
-                // println!(
-                    // "inner product val : {}\ncom {}not vertical element of system{}",
-                //     target.dot(&system_mat).abs(),
-                //     target,
-                //     system_mat
-                //     );
-                return false;
-            }
-        }
-        true
-    }
-
-    pub fn is_all_vertical(system: &Vec<CMatrix2>)->bool{
+    pub(crate) fn is_all_vertical(system: &Vec<CMatrix2>)->bool{
         for v_mat in system.iter().combinations(2){
             if ! is_vertical(v_mat[0], v_mat[1]){
                 return false;
@@ -158,7 +147,7 @@ pub mod test_rep{
         true
     }
 
-    pub fn reshape(target: &CMatrix2, row:i16, col:i16)->CMatrix2{
+    pub(crate) fn reshape(target: &CMatrix2, row:i16, col:i16)->CMatrix2{
         if (target.ncols() * target.nrows()) != (row * col) as usize{
             assert!(false, "input row*col {}, target {}",row*col,target);
         }
@@ -181,16 +170,6 @@ pub mod test_rep{
         mat
     }
 
-    fn adjoint_rep_intest(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
-        let dim = sch_basis.len();
-        let mut rep = CMatrix2::zeros(dim,dim);
-        for (i,j) in itertools::iproduct!(0..dim, 0..dim){
-            let value = &target * dla::commutator(&sch_basis[i], &sch_basis[j]);
-            rep[(i,j)] = value.trace();
-        }
-        rep
-    }
-
     #[test]
     fn check_ajoint_rep_imaginary(){
         let ham_a = make_random_hermitian(4,4);
@@ -210,7 +189,7 @@ pub mod test_rep{
         }
         let len = dla.len()as i16;
         let basis = get_schmit_basis(dla);
-        let adjoint_a = adjoint_rep_intest(vector[0].clone(), &basis);
+        let adjoint_a = adjoint_rep(&vector[0].clone(), &basis);
         println!("😊adjoint_a:\n {:}",reshape(&adjoint_a, len * len , 1));
         // 純複素数行列が得られるはず
         assert!(adjoint_a.iter().all(|&z| z.re <= 1.0e-7));
