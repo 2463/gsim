@@ -135,7 +135,7 @@ pub mod test_rep{
     }
 
     fn is_vertical(c1:&CMatrix2,c2:&CMatrix2)->bool{
-        let result = c1.dot(&c2);
+        let result = ip(c1,c2);
         result.re().pow(2) + result.im().pow(2) < 1.0e-9 * (c1.ncols() * c2.nrows() * 2) as f64
     }
     pub(crate) fn is_all_vertical(system: &Vec<CMatrix2>)->bool{

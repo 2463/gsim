@@ -76,11 +76,11 @@ mod tests {
         density
     }
 
-    fn make_random_parameters(number_of_parameters:usize)->Vec<Complex64>{
+    fn make_random_parameters(number_of_parameters:usize)->Vec<f64>{
         let mut parameters = Vec::new();
         let mut rng = rand::thread_rng();
         for _i in 0..number_of_parameters{
-            parameters.push(Complex64::new(rng.gen(), rng.gen()));
+            parameters.push(rng.gen());
         }
         parameters
     }
@@ -106,28 +106,6 @@ mod tests {
     fn get_unitary(hamiltonian:&CMatrix2,parameter:f64)->CMatrix2{
         let result = (hamiltonian * Complex64::new(parameter,0.0) * MINUS_I).exp();
         result
-    }
-
-    #[test]
-    fn test_nalgebra(){
-        let row = 2;
-        let col = 2;
-        let mat0 = CMatrix2::from_vec(row,col,vec![
-            Complex::new(0.0,0.0),
-            Complex::new(0.1,0.0),
-            Complex::new(0.2,0.0),
-            Complex::new(0.3,0.0),
-            ]);
-        let mat1 = CMatrix2::from_vec(row,col,vec![
-            Complex::new(0.0,0.0),
-            Complex::new(0.0,0.1),
-            Complex::new(0.0,0.2),
-            Complex::new(0.0,0.3),
-            ]);
-
-        println!("{}",&mat0 * &mat1 * &mat0.adjoint());
-        println!("{}",(mat0 * Complex64::new(0.4, 0.8) * MINUS_I).exp());
-        assert!(false);
     }
 
     #[test]
@@ -163,10 +141,6 @@ mod tests {
         let paras_clone = paras.clone();
         let mut gsim = make_gsim(init, obs, &hams);
         gsim.set_parameters(paras.clone());
-        let e_out = gsim.get_e_out(&hams);
-        let dla = gsim.get_dla();
-        println!("dla");
-        for elem in dla{println!("{}",generate_cmatrix_string_in_python_form(&elem))}
         let result = run_simulation(&mut gsim, paras, hams);
         
         // 通常シミュレーション
@@ -187,7 +161,6 @@ mod tests {
         // println!("end_state{}",end_state);
         let e_out_simulation = get_e_test(&end_state, &gsim.get_dla());
         println!("e_out of normal simulation\n{}",e_out_simulation);
-        println!("e_out of gsim\n{}",e_out);
 
         let normal_result = (&obs_clone * &end_state).trace();
 
@@ -198,59 +171,62 @@ mod tests {
     }
 
 
-    // #[test]
-    // fn make_gsim_random_test(){
-    //     let init = make_random_init_density_mat(NUMBER_OF_QUBIT);
-    //     println!(
-    //         "# initial state\n{:.3}{}\n{}",
-    //         init,
-    //         generate_cmatrix_string_in_python_form(&init),
-    //         generate_cmatrix_rust_form(&init));
-    //     let init_clone = init.clone();
-    //     let mut hamiltonians = Vec::new();
-    //     for _i in 0..(NUMBER_OF_GATES){hamiltonians.push(make_random_hermitian(NUMBER_OF_QUBIT))}
-    //     for i in 0..NUMBER_OF_GATES{
-    //         println!(
-    //             "## {}-th hamiltonian\n{:.3}{}\n{}",
-    //             i,
-    //             hamiltonians[i as usize],
-    //             generate_cmatrix_string_in_python_form(&hamiltonians[i as usize]),
-    //             generate_cmatrix_rust_form(&hamiltonians[i as usize]),
-    //         )
-    //         };
-    //     let hamiltonians_clone = hamiltonians.clone();
-    //     let observable = hamiltonians[(NUMBER_OF_GATES - 1) as usize].clone();
-    //     let observable_clone = observable.clone();
-    //     let parameters = make_random_parameters((NUMBER_OF_GATES) as usize);
-    //     let parameters_clone = parameters.clone();
-    //     print!("parameters [");
-    //     for i in 0..NUMBER_OF_GATES{print!("{}, ",generate_complex_string_in_python_form(&parameters[i as usize]))}
-    //     println!("]");
-    //     let mut gsim = make_gsim(init, observable, &hamiltonians);
-    //     gsim.set_parameters(parameters.clone());
-    //     let e_out = gsim.get_e_out(&hamiltonians);
-    //     println!("e_out of gsim\n{}",e_out);
-    //     let result = run_simulation(&mut gsim, parameters, hamiltonians);
-    //     // 通常のシミュレーション
-    //     let mut unitaries = Vec::new();
-    //     for (ham,param) in hamiltonians_clone.iter().zip(parameters_clone){
-    //         println!("param:{},hamiltonian{},unitary{}",param,ham,get_unitary(ham, &param));
-    //         unitaries.push(get_unitary(ham, &param));
-    //     }
-    //     for i in 0..NUMBER_OF_GATES{println!("## {}-th unitary\n{:.3}{}",i,unitaries[i as usize],generate_cmatrix_string_in_python_form(&unitaries[i as usize]))};
-    //     let mut end_state = init_clone;
-    //     for unitary in unitaries{
-    //         end_state = unitary.conjugate().transpose() * end_state * unitary;
-    //     }
-    //     println!("end_state{}",end_state);
-    //     let measurement_result = (observable_clone * &end_state).trace().re;
-    //     println!("gsim result {}\nmeasurement_result {}",result,measurement_result);
-    //     let e_out_simulation = get_e_test(&end_state, &gsim.get_dla());
-    //     println!("e_out of normal simulation\n{}",e_out_simulation);
-    //     // assert!(result == measurement_result);
-    //     assert!(true);
+    #[test]
+    fn make_gsim_random_test(){
+        let init = make_random_init_density_mat(NUMBER_OF_QUBIT);
+        println!(
+            "# initial state\n{:.3}{}\n{}",
+            init,
+            generate_cmatrix_string_in_python_form(&init),
+            generate_cmatrix_rust_form(&init));
+        let init_clone = init.clone();
+        let mut hams = Vec::new();
+        for _i in 0..(NUMBER_OF_GATES){hams.push(make_random_hermitian(NUMBER_OF_QUBIT))}
+        for i in 0..NUMBER_OF_GATES{
+            println!(
+                "## {}-th hamiltonian\n{:.3}{}\n{}",
+                i,
+                hams[i as usize],
+                generate_cmatrix_string_in_python_form(&hams[i as usize]),
+                generate_cmatrix_rust_form(&hams[i as usize]),
+            )
+            };
+        let hams_clone = hams.clone();
+        let obs = hams[0].clone();
+        let obs_clone = hams[0].clone();
+        println!("obs{}",obs);
+        let paras = make_random_parameters(NUMBER_OF_GATES as usize);
+        let paras_clone = paras.clone();
+        let mut gsim = make_gsim(init, obs, &hams);
+        gsim.set_parameters(paras.clone());
+        let result = run_simulation(&mut gsim, paras, hams);
+        
+        // 通常シミュレーション
+        let mut unis = Vec::new();
+        for (ham,para) in hams_clone.iter().zip(paras_clone){
+            // println!("param:{},hamiltonian{},unitary{}",para,ham,get_unitary(ham, &para));
+            unis.push(get_unitary(ham, para));
+        }
+        let mut end_state = init_clone;
+        for unitary in unis{
+            // println!(
+            //     "############# state{}\nunitary{}\n",
+            //     end_state,
+            //     unitary,
+            // );
+            end_state = &unitary * &end_state * &unitary.adjoint();
+        }
+        // println!("end_state{}",end_state);
+        let e_out_simulation = get_e_test(&end_state, &gsim.get_dla());
+        println!("e_out of normal simulation\n{}",e_out_simulation);
 
-    // }
+        let normal_result = (&obs_clone * &end_state).trace();
+
+        println!("expectation val(normal): {}",normal_result);
+        println!("expectation val (gsim): {}",result);
+        assert!(result == normal_result.re,"Difference of gsim and normal is {}",(result - normal_result.re).abs());
+        // assert!(true);
+    }
 
     fn get_e_test(density_mat:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
         let mut result:RVec = RVec::zeros(gs_dla.len());

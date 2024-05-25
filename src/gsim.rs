@@ -70,13 +70,6 @@ impl GSim {
         sim::get_prob(e_out, &self.observable, &self.dla.as_ref().unwrap())
     }
 
-    pub(crate) fn get_e_out(&self,gate_hamiltonians:&Vec<CMatrix2>)->RVec{
-        sim::get_e_out(
-            &self.e_in.as_ref().expect("e_in is not ready. use `.prepare_e_in()`"),
-            &self.parameters.as_ref().expect("parameters is not ready. use `set_parameters(parameters)`"),
-            gate_hamiltonians.clone(),
-            &self.dla.as_ref().expect("dla is not ready. use `.prepare_dla()`"))
-    }
 }
 
 impl GenerateDLA for GSim{
