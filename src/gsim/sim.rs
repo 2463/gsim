@@ -18,18 +18,10 @@ const MINUS_I : Complex64 = Complex64::new(0.0,-1.0);
 fn get_unitary(hamiltonian:&CMatrix2,parameter:f64)->Matrix2{
     let result = (hamiltonian * Complex64::new(parameter,0.0) * MINUS_I).exp();
     // println!("## get_unitary\nresult{:.3}",result);
-    cast_in_real(&result)
+    cast_in_real(result)
 }
 
-fn cast_in_real2(cmat:&CMatrix2)->CMatrix2{
-    let mut result = CMatrix2::zeros(cmat.nrows(), cmat.ncols());
-    for (i,j) in itertools::iproduct!(0..cmat.ncols(),0..cmat.nrows()){
-        result[(i,j)] = Complex64::new(cmat[(i,j)].im,0.0);
-    }
-    result
-}
-
-fn cast_in_real(cmat:&CMatrix2)->Matrix2{
+fn cast_in_real(cmat:CMatrix2)->Matrix2{
     let mut result = Matrix2::zeros(cmat.nrows(), cmat.ncols());
     for (i,j) in itertools::iproduct!(0..cmat.ncols(),0..cmat.nrows()){
         result[(i,j)] = cmat[(i,j)].re
@@ -53,9 +45,10 @@ pub(super) fn get_e(density_mat:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
 
 // 3.
 fn decompose_obs(observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
+    let imaginalized_obs = observable * I;
     let mut w = RVec::zeros(gs_dla.len());
     for i in 0..gs_dla.len(){
-        w[i] = rep::ip(observable,&gs_dla[i]).im();
+        w[i] = rep::ip(&imaginalized_obs,&gs_dla[i]).re;
     }
     println!("w :\n{}",w);
     w
