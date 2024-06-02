@@ -135,19 +135,19 @@ pub(super) fn get_prob(e_out:RVec,observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->f
 
 #[cfg(test)]
 pub mod test_sim{
-    use super::*;
+    // use super::*;
 
-    pub(crate) fn make_x_pauli()->CMatrix2{
-        let mut x = CMatrix2::zeros(2, 2);
-        x[(0,1)] = Complex64::new(1.0,0.0);
-        x[(1,0)] = Complex64::new(1.0,0.0);
-        x
-    }
+    // pub(crate) fn make_x_pauli()->CMatrix2{
+    //     let mut x = CMatrix2::zeros(2, 2);
+    //     x[(0,1)] = Complex64::new(1.0,0.0);
+    //     x[(1,0)] = Complex64::new(1.0,0.0);
+    //     x
+    // }
 
-    pub(crate) fn make_z_pauli()->CMatrix2{
-        let mut z = CMatrix2::zeros(2, 2);
-        z[(0,0)] = Complex64::new(1.0, 0.0);
-        z[(1,1)] = Complex64::new(-1.0,0.0);
-        z
-    }
+    // pub(crate) fn make_z_pauli()->CMatrix2{
+    //     let mut z = CMatrix2::zeros(2, 2);
+    //     z[(0,0)] = Complex64::new(1.0, 0.0);
+    //     z[(1,1)] = Complex64::new(-1.0,0.0);
+    //     z
+    // }
 }
