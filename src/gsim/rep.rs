@@ -6,18 +6,18 @@ type CMatrix2 = DMatrix<Complex64>;
 // DLA からシュミット直交基底を得る
 // 共役表現でハミルトニアンを低次元に写像する
 
-pub(super) fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
-    let first_element = dla.pop().expect("The vector is empty");
+// pub(super) fn get_schmit_basis(mut dla: Vec<CMatrix2>)->Vec<CMatrix2>{
+//     let first_element = dla.pop().expect("The vector is empty");
 
-    let mut sch_basis: Vec<CMatrix2> = vec![first_element];
-    while let Some(element) = dla.pop() {
-        let new_base = gs_system(element, &sch_basis);
-        let new_base = smallize(&new_base);
-        println!("new_base norm {}",new_base.norm_squared());
-        sch_basis.push(new_base);
-    }
-    sch_basis
-}
+//     let mut sch_basis: Vec<CMatrix2> = vec![first_element];
+//     while let Some(element) = dla.pop() {
+//         let new_base = gs_system(element, &sch_basis);
+//         let new_base = smallize(&new_base);
+//         println!("new_base norm {}",new_base.norm_squared());
+//         sch_basis.push(new_base);
+//     }
+//     sch_basis
+// }
 
 pub(super) fn adjoint_rep(target:CMatrix2,sch_basis: &Vec<CMatrix2>)->CMatrix2{
     let dim = sch_basis.len();
