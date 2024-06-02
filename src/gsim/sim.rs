@@ -51,7 +51,7 @@ fn decompose_obs(observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     for i in 0..gs_dla.len(){
         w[i] = rep::ip(&imaginalized_obs,&gs_dla[i]).re; //歪エルミート同士をかけあわせている
     }
-    println!("w :\n{}",w);
+    // println!("w :\n{}",w);
     w
 }
 
@@ -129,7 +129,7 @@ pub(super) fn get_e_out(e_in:&RVec,params_and_gate_nums:&Vec<(f64,usize)>,ad_rep
 
 pub(super) fn get_prob(e_out:RVec,observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->f64{
     let w = decompose_obs(observable, gs_dla);
-    println!("(in get_prob)w : {:.3}\ne_out: {:.3}",w,e_out);
+    // println!("(in get_prob)w : {:.3}\ne_out: {:.3}",w,e_out);
     (w.transpose() * &e_out)[0]
 }
 
