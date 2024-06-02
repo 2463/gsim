@@ -40,7 +40,7 @@ pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         
         
         while !vohs.is_empty() {
-            println!("old len {}, new len {}",old.len(),new.len());
+            // println!("old len {}, new len {}",old.len(),new.len());
             // (1.2 or 5.) gs_vohs から一つ取り出して new group に入れて 2に戻る．(最後の new で検査)
             // vohsにもし内容がなかったら，それはvohs に要素が1つしかなかったということなので，oldを返せば良い
             // また，vohs から candidate を取ったとき，それが old と独立になっていなければ，それを加える必要はないので無視する
@@ -56,7 +56,7 @@ pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
             // pb で使う用パラメータ
             let mut iternum = 0;
             while !new.is_empty() {
-                println!("new len {}",new.len());
+                // println!("new len {}",new.len());
                 // pb
                 iternum += 1;
                 let pblen = ((new.len() * (new.len() - 1) / 2) + new.len() * old.len()) * 2;
@@ -70,9 +70,9 @@ pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
                 //2. new group と old group の間で全パターン commutator を取り，その結果を comm group とする
                 let mut coms = new_old_commutators(&new, &old, &pb);
                 coms.extend(new_new_commutator(&new, &pb));
-                println!("com len {}",coms.len());
+                // println!("com len {}",coms.len());
                 //3. new group を old group に加える．new group を空にする（append）
-                println!("append in old : {}",old.len());
+                // println!("append in old : {}",old.len());
                 old.append(&mut new);
 
                 pb.set_message("checking independency of commutators");
@@ -85,7 +85,7 @@ pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
                     if is_zero(&com){continue;}
                     let gs_com = rep::gs_system(com,&old);
                     let gs_com = rep::gs_system(gs_com,&new);
-                    println!("is_zero? : {}",gs_com.norm_squared());
+                    // println!("is_zero? : {}",gs_com.norm_squared());
                     //  gram schmidt の結果が 0 なら線形従属である
                     if is_zero(&(gs_com)){continue;}
                     if old.len() + new.len() == maximum as usize{
@@ -94,10 +94,10 @@ pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
                     }
                     let gs_com = rep::smallize(&gs_com);
                     new.push(gs_com);
-                    println!("pushed in new : {}",new.len());
+                    // println!("pushed in new : {}",new.len());
                 }
                 pb.finish_and_clear();
-                println!("# all commutators are checked");
+                // println!("# all commutators are checked");
             }
         }
         // new が大きすぎないか検査しておく
