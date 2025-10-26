@@ -31,7 +31,7 @@ fn cast_in_real(cmat:CMatrix2)->Matrix2{
 }
 
 // 2.
-pub(super) fn get_e(density_mat:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
+pub(crate) fn get_e(density_mat:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     let mut result:RVec = RVec::zeros(gs_dla.len());
     for i in 0..gs_dla.len(){
         // println!(
@@ -55,7 +55,7 @@ fn decompose_obs(observable:&CMatrix2,gs_dla:&Vec<CMatrix2>)->RVec{
     w
 }
 
-pub(super) fn get_ad_rep_gate_hams(gate_hams:Vec<CMatrix2>,dla:&Vec<CMatrix2>)->Vec<CMatrix2>{
+pub(crate) fn get_ad_rep_gate_hams(gate_hams:Vec<CMatrix2>,dla:&Vec<CMatrix2>)->Vec<CMatrix2>{
     // (get adjoint represented gate hamiltonians)
     let pb = ProgressBar::new(gate_hams.len() as u64);
     let bar_style = ProgressStyle::with_template(

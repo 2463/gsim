@@ -122,6 +122,18 @@ pub fn get_dla_ein_adgaterep<'a>(init_density_matrix:CMatrix2,observable:CMatrix
     return (dla.get_dla(),dla.get_e_in(),dla.get_ad_rep_gate_hams())
 }
 
+pub fn get_dla(vector_of_hams: &Vec<CMatrix2>)->Vec<CMatrix2>{
+    gsim::dla::get_dla(&vector_of_hams)
+}
+
+pub fn get_e_in(init: &CMatrix2, dla:&Vec<CMatrix2>)->DVector<f64>{
+    gsim::sim::get_e(init,dla)
+}
+
+pub fn get_ad_rep_gate_hams(gate_hamiltonians: Vec<CMatrix2>,dla: &Vec<CMatrix2>)->Vec<CMatrix2>{
+    gsim::sim::get_ad_rep_gate_hams(gate_hamiltonians,dla)
+}
+
 pub fn simulate_with_params(
     dla: &Vec<CMatrix2>,
     e_in: &DVector<f64>,

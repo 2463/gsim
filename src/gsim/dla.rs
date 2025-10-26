@@ -11,7 +11,7 @@ type CMatrix2 = DMatrix<Complex64>;
 /// # dla_gs.rs
 /// dla を求める途中で Gram-Schmidt で直交化させていく関数
 
-pub(super) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
+pub(crate) fn get_dla(vector_of_hamiltonians: &Vec<CMatrix2>)->Vec<CMatrix2>{
         // プログレスバー作成
         let m = MultiProgress::new();
 
